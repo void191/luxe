@@ -154,13 +154,6 @@ export default async function CategoryPage({ params }: CategoryPageProps) {
                 <ProductCard key={product.id} {...product} />
               ))}
             </div>
-
-            {/* Load More */}
-            <div className="text-center mt-12">
-              <Button variant="outline" size="lg">
-                Load More Products
-              </Button>
-            </div>
           </div>
         </section>
       </main>
