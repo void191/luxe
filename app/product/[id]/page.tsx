@@ -26,8 +26,8 @@ const product = {
     { name: "Charcoal", value: "#36454F" },
     { name: "Camel", value: "#C19A6B" },
   ],
-  rating: 4.8,
-  reviews: 127,
+  rating: 0,
+  reviews: 0,
   inStock: true,
   features: [
     "Premium cashmere blend",
@@ -150,21 +150,23 @@ export default function ProductPage() {
               <div>
                 <p className="text-sm text-muted-foreground uppercase tracking-wide mb-2">{product.category}</p>
                 <h1 className="text-3xl md:text-4xl font-serif font-bold mb-4">{product.name}</h1>
-                <div className="flex items-center gap-4 mb-4">
-                  <div className="flex items-center gap-1">
-                    {Array.from({ length: 5 }).map((_, i) => (
-                      <Star
-                        key={i}
-                        className={`h-5 w-5 ${
-                          i < Math.floor(product.rating) ? "fill-accent text-accent" : "text-muted-foreground"
-                        }`}
-                      />
-                    ))}
+                {product.reviews > 0 && (
+                  <div className="flex items-center gap-4 mb-4">
+                    <div className="flex items-center gap-1">
+                      {Array.from({ length: 5 }).map((_, i) => (
+                        <Star
+                          key={i}
+                          className={`h-5 w-5 ${
+                            i < Math.floor(product.rating) ? "fill-accent text-accent" : "text-muted-foreground"
+                          }`}
+                        />
+                      ))}
+                    </div>
+                    <span className="text-sm text-muted-foreground">
+                      {product.rating} ({product.reviews} reviews)
+                    </span>
                   </div>
-                  <span className="text-sm text-muted-foreground">
-                    {product.rating} ({product.reviews} reviews)
-                  </span>
-                </div>
+                )}
                 <div className="flex items-center gap-3 mb-6">
                   <span className="text-3xl font-bold">${product.price.toFixed(2)}</span>
                   {product.originalPrice && (
@@ -298,7 +300,7 @@ export default function ProductPage() {
                 value="reviews"
                 className="rounded-none border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:bg-transparent"
               >
-                Reviews ({product.reviews})
+                Reviews
               </TabsTrigger>
               <TabsTrigger
                 value="shipping"
@@ -320,7 +322,10 @@ export default function ProductPage() {
               </div>
             </TabsContent>
             <TabsContent value="reviews" className="mt-6">
-              <p className="text-muted-foreground">Customer reviews will be displayed here.</p>
+              <div className="text-center py-12">
+                <p className="text-muted-foreground text-lg mb-2">No reviews yet</p>
+                <p className="text-sm text-muted-foreground">Be the first to review this product</p>
+              </div>
             </TabsContent>
             <TabsContent value="shipping" className="mt-6">
               <div className="prose max-w-none">

@@ -94,6 +94,39 @@ const mockProducts = [
     category: "Women",
     isNew: true,
   },
+  // Duplicated products for more content
+  {
+    id: "9",
+    name: "Cashmere Blend Sweater",
+    price: 189.99,
+    originalPrice: 249.99,
+    image: "/luxury-cashmere-sweater.png",
+    category: "Women",
+  },
+  {
+    id: "10",
+    name: "Italian Leather Handbag",
+    price: 449.99,
+    image: "/luxury-leather-handbag.jpg",
+    category: "Accessories",
+    isNew: true,
+  },
+  {
+    id: "11",
+    name: "Tailored Wool Blazer",
+    price: 329.99,
+    image: "/luxury-wool-blazer.png",
+    category: "Men",
+    isNew: true,
+  },
+  {
+    id: "12",
+    name: "Silk Scarf Collection",
+    price: 89.99,
+    originalPrice: 129.99,
+    image: "/luxury-silk-scarf.png",
+    category: "Accessories",
+  },
 ]
 
 interface CategoryPageProps {
@@ -155,11 +188,11 @@ export default async function CategoryPage({ params }: CategoryPageProps) {
               ))}
             </div>
 
-            {/* Load More */}
-            <div className="text-center mt-12">
-              <Button variant="outline" size="lg">
-                Load More Products
-              </Button>
+            {/* End Message */}
+            <div className="text-center mt-12 py-8 border-t">
+              <p className="text-lg text-muted-foreground font-medium">
+                Wait for more products in the future
+              </p>
             </div>
           </div>
         </section>
