@@ -1,0 +1,166 @@
+// Prisma schema for Luxe E-commerce platform
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// User & Authentication
+model User {
+  id        String   @id @default(cuid())
+  email     String   @unique
+  name      String?
+  password  String
+  role      UserRole @default(CUSTOMER)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  orders    Order[]
+  reviews   Review[]
+  cart      Cart?
+  wishlist  Wishlist?
+
+  @@map("users")
+}
+
+enum UserRole {
+  CUSTOMER
+  ADMIN
+}
+
+// Product Management
+model Product {
+  id          String   @id @default(cuid())
+  name        String
+  description String?
+  price       Decimal  @db.Decimal(10, 2)
+  originalPrice Decimal? @db.Decimal(10, 2)
+  image       String
+  category    String
+  isNew       Boolean  @default(false)
+  stock       Int      @default(0)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  orderItems  OrderItem[]
+  reviews     Review[]
+  cartItems   CartItem[]
+  wishlistItems WishlistItem[]
+
+  @@map("products")
+}
+
+// Shopping Cart
+model Cart {
+  id        String   @id @default(cuid())
+  userId    String   @unique
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  items     CartItem[]
+
+  @@map("carts")
+}
+
+model CartItem {
+  id        String   @id @default(cuid())
+  cartId    String
+  cart      Cart     @relation(fields: [cartId], references: [id], onDelete: Cascade)
+  productId String
+  product   Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
+  quantity  Int      @default(1)
+  size      String?
+  color     String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("cart_items")
+}
+
+// Wishlist
+model Wishlist {
+  id        String   @id @default(cuid())
+  userId    String   @unique
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  items     WishlistItem[]
+
+  @@map("wishlists")
+}
+
+model WishlistItem {
+  id         String   @id @default(cuid())
+  wishlistId String
+  wishlist   Wishlist @relation(fields: [wishlistId], references: [id], onDelete: Cascade)
+  productId  String
+  product    Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
+  createdAt  DateTime @default(now())
+
+  @@map("wishlist_items")
+}
+
+// Orders
+model Order {
+  id              String      @id @default(cuid())
+  orderNumber     String      @unique
+  userId          String
+  user            User        @relation(fields: [userId], references: [id])
+  status          OrderStatus @default(PENDING)
+  subtotal        Decimal     @db.Decimal(10, 2)
+  tax             Decimal     @db.Decimal(10, 2)
+  shipping        Decimal     @db.Decimal(10, 2)
+  total           Decimal     @db.Decimal(10, 2)
+  shippingAddress Json
+  createdAt       DateTime    @default(now())
+  updatedAt       DateTime    @updatedAt
+
+  items           OrderItem[]
+
+  @@map("orders")
+}
+
+enum OrderStatus {
+  PENDING
+  PROCESSING
+  SHIPPED
+  DELIVERED
+  CANCELLED
+}
+
+model OrderItem {
+  id        String   @id @default(cuid())
+  orderId   String
+  order     Order    @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  productId String
+  product   Product  @relation(fields: [productId], references: [id])
+  quantity  Int
+  price     Decimal  @db.Decimal(10, 2)
+  size      String?
+  color     String?
+  createdAt DateTime @default(now())
+
+  @@map("order_items")
+}
+
+// Reviews
+model Review {
+  id        String   @id @default(cuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  productId String
+  product   Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
+  rating    Int
+  title     String?
+  comment   String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("reviews")
+}
