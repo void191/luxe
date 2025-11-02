@@ -29,6 +29,11 @@ const wishlistItems: Array<{
 }> = []
 
 export default function AccountPage() {
+  const handleAddToCart = (itemName: string) => {
+    // Add to cart logic will be handled here
+    alert(`Added ${itemName} to cart`)
+  }
+
   return (
     <div className="min-h-screen flex flex-col">
       <Header />
@@ -161,10 +166,7 @@ export default function AccountPage() {
                       <p className="text-xs text-muted-foreground uppercase tracking-wide mb-1">{item.category}</p>
                       <h3 className="font-medium text-sm mb-2 line-clamp-2">{item.name}</h3>
                       <p className="font-semibold mb-3">${item.price.toFixed(2)}</p>
-                      <Button size="sm" className="w-full" onClick={() => {
-                        // Add to cart logic will be handled here
-                        alert(`Added ${item.name} to cart`)
-                      }}>
+                      <Button size="sm" className="w-full" onClick={() => handleAddToCart(item.name)}>
                         Add to Cart
                       </Button>
                     </CardContent>

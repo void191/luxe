@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { use, useState } from "react"
 import { notFound } from "next/navigation"
 import { Header } from "@/components/header"
 import { Footer } from "@/components/footer"
@@ -106,17 +106,9 @@ interface CategoryPageProps {
 }
 
 export default function CategoryPage({ params }: CategoryPageProps) {
-  const [slug, setSlug] = useState<string>("")
+  const { slug } = use(params)
   const [displayedProducts, setDisplayedProducts] = useState(mockProducts)
   const [loadMoreCount, setLoadMoreCount] = useState(0)
-
-  useEffect(() => {
-    params.then((p) => setSlug(p.slug))
-  }, [params])
-
-  if (!slug) {
-    return null
-  }
 
   const category = categoryData[slug]
 
@@ -125,14 +117,15 @@ export default function CategoryPage({ params }: CategoryPageProps) {
   }
 
   const handleLoadMore = () => {
-    // Simulate loading more products
+    // Simulate loading more products by duplicating the existing ones
+    // In a real app, this would fetch more data from an API
     const moreProducts = mockProducts.map((p, i) => ({
       ...p,
-      id: `${p.id}-${loadMoreCount}-${i}`,
+      id: `${p.id}-batch${loadMoreCount}-item${i}`, // Unique IDs for demo purposes
     }))
     setDisplayedProducts([...displayedProducts, ...moreProducts])
     setLoadMoreCount(loadMoreCount + 1)
-    alert("Loading more products...")
+    alert(`Loaded ${moreProducts.length} more products (demo data)`)
   }
 
   return (
