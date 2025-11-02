@@ -26,25 +26,51 @@ export default function RegisterPage() {
             <CardDescription>Join us and start shopping luxury fashion</CardDescription>
           </CardHeader>
           <CardContent>
-            <form className="space-y-4">
+            <form
+              className="space-y-4"
+              onSubmit={(e) => {
+                e.preventDefault()
+                const formData = new FormData(e.currentTarget)
+                const password = formData.get("password")
+                const confirmPassword = formData.get("confirmPassword")
+
+                if (password !== confirmPassword) {
+                  alert("Passwords do not match!")
+                  return
+                }
+
+                alert(
+                  `Account created successfully!\nName: ${formData.get("firstName")} ${formData.get(
+                    "lastName"
+                  )}\nEmail: ${formData.get("email")}\n\nNote: This is a demo - no actual registration is performed.`
+                )
+              }}
+            >
               <div className="grid grid-cols-2 gap-4">
                 <div>
                   <Label htmlFor="firstName">First Name</Label>
-                  <Input id="firstName" placeholder="John" />
+                  <Input id="firstName" name="firstName" placeholder="John" required />
                 </div>
                 <div>
                   <Label htmlFor="lastName">Last Name</Label>
-                  <Input id="lastName" placeholder="Doe" />
+                  <Input id="lastName" name="lastName" placeholder="Doe" required />
                 </div>
               </div>
               <div>
                 <Label htmlFor="email">Email</Label>
-                <Input id="email" type="email" placeholder="you@example.com" />
+                <Input id="email" name="email" type="email" placeholder="you@example.com" required />
               </div>
               <div>
                 <Label htmlFor="password">Password</Label>
                 <div className="relative">
-                  <Input id="password" type={showPassword ? "text" : "password"} placeholder="Create a password" />
+                  <Input
+                    id="password"
+                    name="password"
+                    type={showPassword ? "text" : "password"}
+                    placeholder="Create a password"
+                    required
+                    minLength={8}
+                  />
                   <Button
                     type="button"
                     variant="ghost"
@@ -62,8 +88,11 @@ export default function RegisterPage() {
                 <div className="relative">
                   <Input
                     id="confirmPassword"
+                    name="confirmPassword"
                     type={showConfirmPassword ? "text" : "password"}
                     placeholder="Confirm your password"
+                    required
+                    minLength={8}
                   />
                   <Button
                     type="button"
@@ -78,7 +107,7 @@ export default function RegisterPage() {
                 </div>
               </div>
               <div className="flex items-start space-x-2">
-                <Checkbox id="terms" className="mt-1" />
+                <Checkbox id="terms" name="terms" className="mt-1" required />
                 <label
                   htmlFor="terms"
                   className="text-sm text-muted-foreground cursor-pointer leading-relaxed peer-disabled:cursor-not-allowed peer-disabled:opacity-70"

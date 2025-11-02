@@ -1,3 +1,5 @@
+"use client"
+
 import Link from "next/link"
 import Image from "next/image"
 import { ArrowRight } from "lucide-react"
@@ -161,11 +163,18 @@ export default function HomePage() {
             <p className="text-accent-foreground/80 max-w-2xl mx-auto mb-8 leading-relaxed">
               Subscribe to receive exclusive offers, style tips, and early access to new collections
             </p>
-            <form className="max-w-md mx-auto flex gap-2">
+            <form
+              className="max-w-md mx-auto flex gap-2"
+              onSubmit={(e) => {
+                e.preventDefault()
+                alert("Thank you for subscribing! You'll receive our newsletter soon.")
+              }}
+            >
               <input
                 type="email"
                 placeholder="Enter your email"
                 className="flex-1 px-4 py-3 rounded-md bg-background text-foreground border border-border focus:outline-none focus:ring-2 focus:ring-ring"
+                required
               />
               <Button type="submit" variant="secondary" size="lg">
                 Subscribe

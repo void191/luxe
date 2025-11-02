@@ -39,7 +39,14 @@ export function Header() {
 
         {/* Actions */}
         <div className="flex items-center space-x-4">
-          <Button variant="ghost" size="icon" className="hidden md:flex">
+          <Button
+            variant="ghost"
+            size="icon"
+            className="hidden md:flex"
+            onClick={() => {
+              alert("Search functionality coming soon!")
+            }}
+          >
             <Search className="h-5 w-5" />
             <span className="sr-only">Search</span>
           </Button>

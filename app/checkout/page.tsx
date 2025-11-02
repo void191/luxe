@@ -208,7 +208,9 @@ export default function CheckoutPage() {
                 </CardContent>
               </Card>
 
-              <Button size="lg" className="w-full">
+              <Button size="lg" className="w-full" onClick={() => {
+                alert("Order completed successfully! (Demo: no actual order processing)\n\nThank you for your purchase!")
+              }}>
                 Complete Order
               </Button>
             </div>
