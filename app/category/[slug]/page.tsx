@@ -1,3 +1,6 @@
+"use client"
+
+import { use, useState } from "react"
 import { notFound } from "next/navigation"
 import { Header } from "@/components/header"
 import { Footer } from "@/components/footer"
@@ -102,12 +105,27 @@ interface CategoryPageProps {
   }>
 }
 
-export default async function CategoryPage({ params }: CategoryPageProps) {
-  const { slug } = await params
+export default function CategoryPage({ params }: CategoryPageProps) {
+  const { slug } = use(params)
+  const [displayedProducts, setDisplayedProducts] = useState(mockProducts)
+  const [loadMoreCount, setLoadMoreCount] = useState(0)
+
   const category = categoryData[slug]
 
   if (!category) {
     notFound()
+  }
+
+  const handleLoadMore = () => {
+    // Simulate loading more products by duplicating the existing ones
+    // In a real app, this would fetch more data from an API
+    const moreProducts = mockProducts.map((p, i) => ({
+      ...p,
+      id: `${p.id}-batch${loadMoreCount}-item${i}`, // Unique IDs for demo purposes
+    }))
+    setDisplayedProducts([...displayedProducts, ...moreProducts])
+    setLoadMoreCount(loadMoreCount + 1)
+    alert(`Loaded ${moreProducts.length} more products (demo data)`)
   }
 
   return (
@@ -128,7 +146,7 @@ export default async function CategoryPage({ params }: CategoryPageProps) {
           <div className="container mx-auto px-4">
             {/* Filter Bar */}
             <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-8">
-              <p className="text-sm text-muted-foreground">Showing {mockProducts.length} products</p>
+              <p className="text-sm text-muted-foreground">Showing {displayedProducts.length} products</p>
               <div className="flex flex-wrap gap-3 w-full sm:w-auto">
                 <Button variant="outline" size="sm" className="gap-2 bg-transparent">
                   <SlidersHorizontal className="h-4 w-4" />
@@ -150,14 +168,14 @@ export default async function CategoryPage({ params }: CategoryPageProps) {
 
             {/* Products Grid */}
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-              {mockProducts.map((product) => (
+              {displayedProducts.map((product) => (
                 <ProductCard key={product.id} {...product} />
               ))}
             </div>
 
             {/* Load More */}
             <div className="text-center mt-12">
-              <Button variant="outline" size="lg">
+              <Button variant="outline" size="lg" onClick={handleLoadMore}>
                 Load More Products
               </Button>
             </div>

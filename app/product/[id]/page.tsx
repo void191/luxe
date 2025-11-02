@@ -26,8 +26,8 @@ const product = {
     { name: "Charcoal", value: "#36454F" },
     { name: "Camel", value: "#C19A6B" },
   ],
-  rating: 4.8,
-  reviews: 127,
+  rating: 0,
+  reviews: 0,
   inStock: true,
   features: [
     "Premium cashmere blend",
@@ -82,6 +82,17 @@ export default function ProductPage() {
   const discount = product.originalPrice
     ? Math.round(((product.originalPrice - product.price) / product.originalPrice) * 100)
     : 0
+
+  const handleAddToCart = () => {
+    if (!selectedSize || !product.inStock) return
+    // Add to cart logic will be handled here
+    alert(`Added ${quantity} x ${product.name} (${selectedSize}, ${selectedColor.name}) to cart`)
+  }
+
+  const handleWishlistClick = () => {
+    // Add to wishlist logic will be handled here
+    alert(`Added ${product.name} to wishlist`)
+  }
 
   return (
     <div className="min-h-screen flex flex-col">
@@ -246,11 +257,11 @@ export default function ProductPage() {
 
               {/* Actions */}
               <div className="flex gap-4">
-                <Button size="lg" className="flex-1" disabled={!selectedSize || !product.inStock}>
+                <Button size="lg" className="flex-1" disabled={!selectedSize || !product.inStock} onClick={handleAddToCart}>
                   <ShoppingBag className="mr-2 h-5 w-5" />
                   Add to Cart
                 </Button>
-                <Button variant="outline" size="lg">
+                <Button variant="outline" size="lg" onClick={handleWishlistClick}>
                   <Heart className="h-5 w-5" />
                   <span className="sr-only">Add to wishlist</span>
                 </Button>

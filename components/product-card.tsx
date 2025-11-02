@@ -19,6 +19,12 @@ interface ProductCardProps {
 export function ProductCard({ id, name, price, originalPrice, image, category, isNew }: ProductCardProps) {
   const discount = originalPrice ? Math.round(((originalPrice - price) / originalPrice) * 100) : 0
 
+  const handleWishlistClick = (e: React.MouseEvent) => {
+    e.preventDefault()
+    // Add to wishlist logic will be handled here
+    alert(`Added ${name} to wishlist`)
+  }
+
   return (
     <Card className="group overflow-hidden border-border hover:shadow-lg transition-shadow">
       <Link href={`/product/${id}`}>
@@ -43,10 +49,7 @@ export function ProductCard({ id, name, price, originalPrice, image, category, i
             variant="ghost"
             size="icon"
             className="absolute top-3 right-3 bg-background/80 backdrop-blur-sm hover:bg-background"
-            onClick={(e) => {
-              e.preventDefault()
-              // Add to wishlist logic
-            }}
+            onClick={handleWishlistClick}
           >
             <Heart className="h-4 w-4" />
             <span className="sr-only">Add to wishlist</span>
