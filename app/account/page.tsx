@@ -124,11 +124,11 @@ export default function AccountPage() {
                       ))}
                     </div>
                     <div className="flex gap-3 mt-4 pt-4 border-t">
-                      <Button variant="outline" size="sm">
+                      <Button variant="outline" size="sm" onClick={() => alert(`Viewing details for order ${order.id}`)}>
                         View Details
                       </Button>
                       {order.status === "Delivered" && (
-                        <Button variant="outline" size="sm">
+                        <Button variant="outline" size="sm" onClick={() => alert("Items from this order added to cart!")}>
                           Buy Again
                         </Button>
                       )}
@@ -157,7 +157,7 @@ export default function AccountPage() {
                       <p className="text-xs text-muted-foreground uppercase tracking-wide mb-1">{item.category}</p>
                       <h3 className="font-medium text-sm mb-2 line-clamp-2">{item.name}</h3>
                       <p className="font-semibold mb-3">${item.price.toFixed(2)}</p>
-                      <Button size="sm" className="w-full">
+                      <Button size="sm" className="w-full" onClick={() => alert(`${item.name} added to cart!`)}>
                         Add to Cart
                       </Button>
                     </CardContent>
@@ -180,16 +180,16 @@ export default function AccountPage() {
                     <p className="text-sm text-muted-foreground">(555) 123-4567</p>
                   </div>
                   <div className="flex gap-3">
-                    <Button variant="outline" size="sm">
+                    <Button variant="outline" size="sm" onClick={() => alert("Edit address functionality coming soon!")}>
                       Edit
                     </Button>
-                    <Button variant="outline" size="sm">
+                    <Button variant="outline" size="sm" onClick={() => alert("Address removed successfully!")}>
                       Remove
                     </Button>
                   </div>
                 </CardContent>
               </Card>
-              <Button>Add New Address</Button>
+              <Button onClick={() => alert("Add new address form coming soon!")}>Add New Address</Button>
             </TabsContent>
 
             {/* Payment Tab */}
@@ -200,7 +200,7 @@ export default function AccountPage() {
                 </CardHeader>
                 <CardContent>
                   <p className="text-muted-foreground">No saved payment methods</p>
-                  <Button className="mt-4">Add Payment Method</Button>
+                  <Button className="mt-4" onClick={() => alert("Add payment method form coming soon!")}>Add Payment Method</Button>
                 </CardContent>
               </Card>
             </TabsContent>
@@ -230,7 +230,7 @@ export default function AccountPage() {
                     <Label htmlFor="profilePhone">Phone</Label>
                     <Input id="profilePhone" type="tel" defaultValue="(555) 123-4567" />
                   </div>
-                  <Button>Save Changes</Button>
+                  <Button onClick={() => alert("Profile changes saved successfully!")}>Save Changes</Button>
                 </CardContent>
               </Card>
             </TabsContent>

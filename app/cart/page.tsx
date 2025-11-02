@@ -185,7 +185,18 @@ export default function CartPage() {
                         onChange={(e) => setPromoCode(e.target.value)}
                         className="flex-1"
                       />
-                      <Button variant="outline">Apply</Button>
+                      <Button
+                        variant="outline"
+                        onClick={() => {
+                          if (promoCode.trim() === "") {
+                            alert("Please enter a promo code")
+                          } else {
+                            alert(`Promo code "${promoCode}" applied! (Demo: no actual discount applied)`)
+                          }
+                        }}
+                      >
+                        Apply
+                      </Button>
                     </div>
                   </div>
 

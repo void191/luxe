@@ -246,11 +246,24 @@ export default function ProductPage() {
 
               {/* Actions */}
               <div className="flex gap-4">
-                <Button size="lg" className="flex-1" disabled={!selectedSize || !product.inStock}>
+                <Button
+                  size="lg"
+                  className="flex-1"
+                  disabled={!selectedSize || !product.inStock}
+                  onClick={() => {
+                    alert(`Added ${quantity} x ${product.name} (Size: ${selectedSize}, Color: ${selectedColor.name}) to cart!`)
+                  }}
+                >
                   <ShoppingBag className="mr-2 h-5 w-5" />
                   Add to Cart
                 </Button>
-                <Button variant="outline" size="lg">
+                <Button
+                  variant="outline"
+                  size="lg"
+                  onClick={() => {
+                    alert(`${product.name} added to your wishlist!`)
+                  }}
+                >
                   <Heart className="h-5 w-5" />
                   <span className="sr-only">Add to wishlist</span>
                 </Button>
