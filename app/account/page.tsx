@@ -12,42 +12,21 @@ import Image from "next/image"
 import Link from "next/link"
 
 // Mock order data
-const orders = [
-  {
-    id: "ORD-001",
-    date: "2024-01-15",
-    status: "Delivered",
-    total: 639.98,
-    items: [
-      { name: "Cashmere Blend Sweater", image: "/luxury-cashmere-sweater.png", quantity: 1 },
-      { name: "Italian Leather Handbag", image: "/luxury-leather-handbag.jpg", quantity: 1 },
-    ],
-  },
-  {
-    id: "ORD-002",
-    date: "2024-01-20",
-    status: "In Transit",
-    total: 329.99,
-    items: [{ name: "Tailored Wool Blazer", image: "/luxury-wool-blazer.png", quantity: 1 }],
-  },
-]
+const orders: Array<{
+  id: string
+  date: string
+  status: string
+  total: number
+  items: Array<{ name: string; image: string; quantity: number }>
+}> = []
 
-const wishlistItems = [
-  {
-    id: "3",
-    name: "Tailored Wool Blazer",
-    price: 329.99,
-    image: "/luxury-wool-blazer.png",
-    category: "Men",
-  },
-  {
-    id: "7",
-    name: "Designer Sunglasses",
-    price: 199.99,
-    image: "/luxury-sunglasses.png",
-    category: "Accessories",
-  },
-]
+const wishlistItems: Array<{
+  id: string
+  name: string
+  price: number
+  image: string
+  category: string
+}> = []
 
 export default function AccountPage() {
   return (
@@ -84,7 +63,19 @@ export default function AccountPage() {
 
             {/* Orders Tab */}
             <TabsContent value="orders" className="space-y-4">
-              {orders.map((order) => (
+              {orders.length === 0 ? (
+                <Card>
+                  <CardContent className="p-12 text-center">
+                    <Package className="h-16 w-16 mx-auto text-muted-foreground mb-4" />
+                    <h3 className="text-xl font-semibold mb-2">No Orders Yet</h3>
+                    <p className="text-muted-foreground mb-6">You haven't placed any orders yet.</p>
+                    <Button asChild>
+                      <Link href="/">Start Shopping</Link>
+                    </Button>
+                  </CardContent>
+                </Card>
+              ) : (
+                orders.map((order) => (
                 <Card key={order.id}>
                   <CardHeader>
                     <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
@@ -135,13 +126,26 @@ export default function AccountPage() {
                     </div>
                   </CardContent>
                 </Card>
-              ))}
+              ))
+              )}
             </TabsContent>
 
             {/* Wishlist Tab */}
             <TabsContent value="wishlist">
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-                {wishlistItems.map((item) => (
+              {wishlistItems.length === 0 ? (
+                <Card>
+                  <CardContent className="p-12 text-center">
+                    <Heart className="h-16 w-16 mx-auto text-muted-foreground mb-4" />
+                    <h3 className="text-xl font-semibold mb-2">Your Wishlist is Empty</h3>
+                    <p className="text-muted-foreground mb-6">Save your favorite items to your wishlist.</p>
+                    <Button asChild>
+                      <Link href="/">Browse Products</Link>
+                    </Button>
+                  </CardContent>
+                </Card>
+              ) : (
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+                  {wishlistItems.map((item) => (
                   <Card key={item.id} className="group overflow-hidden">
                     <Link href={`/product/${item.id}`}>
                       <div className="relative aspect-[3/4] overflow-hidden bg-muted">
@@ -157,13 +161,17 @@ export default function AccountPage() {
                       <p className="text-xs text-muted-foreground uppercase tracking-wide mb-1">{item.category}</p>
                       <h3 className="font-medium text-sm mb-2 line-clamp-2">{item.name}</h3>
                       <p className="font-semibold mb-3">${item.price.toFixed(2)}</p>
-                      <Button size="sm" className="w-full">
+                      <Button size="sm" className="w-full" onClick={() => {
+                        // Add to cart logic will be handled here
+                        alert(`Added ${item.name} to cart`)
+                      }}>
                         Add to Cart
                       </Button>
                     </CardContent>
                   </Card>
                 ))}
               </div>
+              )}
             </TabsContent>
 
             {/* Addresses Tab */}

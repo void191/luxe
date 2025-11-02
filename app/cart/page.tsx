@@ -11,35 +11,15 @@ import { Card, CardContent } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 
 // Mock cart data - will be replaced with real data later
-const initialCartItems = [
-  {
-    id: "1",
-    name: "Cashmere Blend Sweater",
-    price: 189.99,
-    image: "/luxury-cashmere-sweater.png",
-    size: "M",
-    color: "Ivory",
-    quantity: 1,
-  },
-  {
-    id: "2",
-    name: "Italian Leather Handbag",
-    price: 449.99,
-    image: "/luxury-leather-handbag.jpg",
-    size: "One Size",
-    color: "Black",
-    quantity: 1,
-  },
-  {
-    id: "4",
-    name: "Silk Scarf Collection",
-    price: 89.99,
-    image: "/luxury-silk-scarf.png",
-    size: "One Size",
-    color: "Multi",
-    quantity: 2,
-  },
-]
+const initialCartItems: Array<{
+  id: string
+  name: string
+  price: number
+  image: string
+  size: string
+  color: string
+  quantity: number
+}> = []
 
 export default function CartPage() {
   const [cartItems, setCartItems] = useState(initialCartItems)
