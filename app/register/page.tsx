@@ -107,8 +107,6 @@ export default function RegisterPage() {
           </CardContent>
         </Card>
       </main>
-
-      <Footer />
     </div>
   )
 }

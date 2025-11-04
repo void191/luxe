@@ -74,8 +74,6 @@ export default function LoginPage() {
           </CardContent>
         </Card>
       </main>
-
-      <Footer />
     </div>
   )
 }

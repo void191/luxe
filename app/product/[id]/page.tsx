@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useState, use } from "react"
 import Image from "next/image"
 import Link from "next/link"
 import { Heart, Minus, Plus, ShoppingBag, Star, Truck, RefreshCw, Shield } from "lucide-react"
@@ -9,79 +9,56 @@ import { Footer } from "@/components/footer"
 import { Button } from "@/components/ui/button"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { ProductCard } from "@/components/product-card"
+import { useCart } from "@/lib/hooks/use-cart"
+import { useWishlist } from "@/lib/hooks/use-wishlist"
+import toast from "react-hot-toast"
+import { products } from "@/lib/products"
+import { notFound } from "next/navigation"
 
-// Mock product data - will be replaced with real data later
-const product = {
-  id: "1",
-  name: "Cashmere Blend Sweater",
-  price: 189.99,
-  originalPrice: 249.99,
-  description:
-    "Experience unparalleled luxury with our premium cashmere blend sweater. Crafted from the finest materials, this piece combines exceptional softness with timeless elegance.",
-  category: "Women",
-  images: ["/luxury-cashmere-sweater.png", "/luxury-wool-cardigan.jpg", "/luxury-cashmere-coat.png"],
-  sizes: ["XS", "S", "M", "L", "XL"],
-  colors: [
-    { name: "Ivory", value: "#F5F5DC" },
-    { name: "Charcoal", value: "#36454F" },
-    { name: "Camel", value: "#C19A6B" },
-  ],
-  rating: 4.8,
-  reviews: 127,
-  inStock: true,
-  features: [
-    "Premium cashmere blend",
-    "Ribbed crew neck",
-    "Long sleeves with ribbed cuffs",
-    "Relaxed fit",
-    "Dry clean only",
-  ],
-}
+export default function ProductPage({ params }: { params: { id: string } }) {
+  const resolvedParams = use(params);
+  const product = products.find((p) => p.id === resolvedParams.id)
 
-const relatedProducts = [
-  {
-    id: "2",
-    name: "Italian Leather Handbag",
-    price: 449.99,
-    image: "/luxury-leather-handbag.jpg",
-    category: "Accessories",
-    isNew: true,
-  },
-  {
-    id: "3",
-    name: "Tailored Wool Blazer",
-    price: 329.99,
-    image: "/luxury-wool-blazer.png",
-    category: "Men",
-    isNew: true,
-  },
-  {
-    id: "4",
-    name: "Silk Scarf Collection",
-    price: 89.99,
-    originalPrice: 129.99,
-    image: "/luxury-silk-scarf.png",
-    category: "Accessories",
-  },
-  {
-    id: "5",
-    name: "Merino Wool Cardigan",
-    price: 159.99,
-    image: "/luxury-wool-cardigan.jpg",
-    category: "Women",
-    isNew: true,
-  },
-]
+  if (!product) {
+    notFound()
+  }
 
-export default function ProductPage() {
   const [selectedImage, setSelectedImage] = useState(0)
-  const [selectedSize, setSelectedSize] = useState("")
+  const [selectedSize, setSelectedSize] = useState(product.sizes?.[0] || "")
   const [selectedColor, setSelectedColor] = useState(product.colors[0])
   const [quantity, setQuantity] = useState(1)
+  const { addToCart } = useCart()
+  const { isInWishlist, toggleWishlist } = useWishlist()
+  const wishlisted = isInWishlist(product.id)
+
+  const handleAddToCart = () => {
+    if (!selectedSize) {
+      toast.error("Please select a size before adding to cart")
+      return
+    }
+    addToCart(
+      {
+        id: product.id,
+        name: product.name,
+        price: product.price,
+        image: product.images[0],
+        size: selectedSize,
+        color: selectedColor.name,
+      },
+      quantity
+    )
+    toast.success("Added to cart!")
+  }
+
+  const handleWishlistToggle = () => {
+    toggleWishlist(product.id)
+  }
 
   const discount = product.originalPrice
     ? Math.round(((product.originalPrice - product.price) / product.originalPrice) * 100)
     : 0
+    
+  const relatedProducts = products.filter(p => p.category === product.category && p.id !== product.id).slice(0, 4);
 
   return (
     <div className="min-h-screen flex flex-col">
@@ -131,8 +108,11 @@ export default function ProductPage() {
                     key={index}
                     onClick={() => setSelectedImage(index)}
                     className={`relative aspect-[3/4] overflow-hidden rounded-lg border-2 transition-colors ${
-                      selectedImage === index ? "border-primary" : "border-border hover:border-primary/50"
+                      selectedImage === index
+                        ? "border-primary"
+                        : "border-border hover:border-primary/50"
                     }`}
+                    title={`View image ${index + 1}`}
                   >
                     <Image
                       src={image || "/placeholder.svg"}
@@ -193,6 +173,7 @@ export default function ProductPage() {
                       }`}
                       style={{ backgroundColor: color.value }}
                       aria-label={color.name}
+                      title={color.name}
                     />
                   ))}
                 </div>
@@ -246,13 +227,26 @@ export default function ProductPage() {
 
               {/* Actions */}
               <div className="flex gap-4">
-                <Button size="lg" className="flex-1" disabled={!selectedSize || !product.inStock}>
+                <Button
+                  size="lg"
+                  className="flex-1"
+                  disabled={!selectedSize || !product.inStock}
+                  onClick={handleAddToCart}
+                >
                   <ShoppingBag className="mr-2 h-5 w-5" />
                   Add to Cart
                 </Button>
-                <Button variant="outline" size="lg">
-                  <Heart className="h-5 w-5" />
-                  <span className="sr-only">Add to wishlist</span>
+                <Button
+                  variant="outline"
+                  size="lg"
+                  onClick={handleWishlistToggle}
+                >
+                  <Heart
+                    className={`h-5 w-5 ${
+                      wishlisted ? "fill-current text-red-500" : ""
+                    }`}
+                  />
+                  <span className="sr-only">Toggle wishlist</span>
                 </Button>
               </div>
 
@@ -343,14 +337,12 @@ export default function ProductPage() {
         <section className="container mx-auto px-4 py-12 border-t">
           <h2 className="text-2xl md:text-3xl font-serif font-bold mb-8">You May Also Like</h2>
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-            {relatedProducts.map((product) => (
-              <ProductCard key={product.id} {...product} />
+            {relatedProducts.map((p) => (
+              <ProductCard key={p.id} {...p} />
             ))}
           </div>
         </section>
       </main>
-
-      <Footer />
     </div>
   )
 }

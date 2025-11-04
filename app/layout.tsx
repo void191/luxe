@@ -2,6 +2,7 @@ import type React from "react"
 import type { Metadata } from "next"
 import { Inter, Playfair_Display } from "next/font/google"
 import { Analytics } from "@vercel/analytics/next"
+import { Toaster } from "react-hot-toast"
 import "./globals.css"
 
 const inter = Inter({
@@ -22,17 +23,28 @@ export const metadata: Metadata = {
   generator: "v0.app",
 }
 
+import { CartProvider } from "@/lib/hooks/use-cart";
+import { WishlistProvider } from "@/lib/hooks/use-wishlist";
+import { OrderHistoryProvider } from "@/lib/hooks/use-order-history";
+
 export default function RootLayout({
   children,
 }: Readonly<{
-  children: React.ReactNode
+  children: React.ReactNode;
 }>) {
   return (
-    <html lang="en">
+    <html lang="en" suppressHydrationWarning>
       <body className={`${inter.className} font-sans antialiased`}>
-        {children}
-        <Analytics />
+        <WishlistProvider>
+          <CartProvider>
+            <OrderHistoryProvider>
+              {children}
+              <Toaster />
+              <Analytics />
+            </OrderHistoryProvider>
+          </CartProvider>
+        </WishlistProvider>
       </body>
     </html>
-  )
+  );
 }

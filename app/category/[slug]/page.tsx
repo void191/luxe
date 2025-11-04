@@ -1,12 +1,19 @@
-import { notFound } from "next/navigation"
-import { Header } from "@/components/header"
-import { Footer } from "@/components/footer"
-import { ProductCard } from "@/components/product-card"
-import { Button } from "@/components/ui/button"
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { SlidersHorizontal } from "lucide-react"
+"use client";
 
-// Mock data - will be replaced with real data later
+import { useState, useEffect, use } from "react";
+import { notFound } from "next/navigation";
+import { Header } from "@/components/header";
+import { ProductCard } from "@/components/product-card";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { products as initialProducts } from "@/lib/products";
+import { Product } from "@/lib/types";
+
 const categoryData: Record<string, { name: string; description: string }> = {
   "new-arrivals": {
     name: "New Arrivals",
@@ -28,144 +35,149 @@ const categoryData: Record<string, { name: string; description: string }> = {
     name: "Sale",
     description: "Premium pieces at exceptional prices",
   },
-}
-
-const mockProducts = [
-  {
-    id: "1",
-    name: "Cashmere Blend Sweater",
-    price: 189.99,
-    originalPrice: 249.99,
-    image: "/luxury-cashmere-sweater.png",
-    category: "Women",
+  featured: {
+    name: "Featured",
+    description: "Our most popular and highly recommended pieces",
   },
-  {
-    id: "2",
-    name: "Italian Leather Handbag",
-    price: 449.99,
-    image: "/luxury-leather-handbag.jpg",
-    category: "Accessories",
-    isNew: true,
-  },
-  {
-    id: "3",
-    name: "Tailored Wool Blazer",
-    price: 329.99,
-    image: "/luxury-wool-blazer.png",
-    category: "Men",
-    isNew: true,
-  },
-  {
-    id: "4",
-    name: "Silk Scarf Collection",
-    price: 89.99,
-    originalPrice: 129.99,
-    image: "/luxury-silk-scarf.png",
-    category: "Accessories",
-  },
-  {
-    id: "5",
-    name: "Merino Wool Cardigan",
-    price: 159.99,
-    image: "/luxury-wool-cardigan.jpg",
-    category: "Women",
-    isNew: true,
-  },
-  {
-    id: "6",
-    name: "Leather Oxford Shoes",
-    price: 279.99,
-    originalPrice: 349.99,
-    image: "/luxury-oxford-shoes.jpg",
-    category: "Men",
-  },
-  {
-    id: "7",
-    name: "Designer Sunglasses",
-    price: 199.99,
-    image: "/luxury-sunglasses.png",
-    category: "Accessories",
-  },
-  {
-    id: "8",
-    name: "Cashmere Coat",
-    price: 599.99,
-    image: "/luxury-cashmere-coat.png",
-    category: "Women",
-    isNew: true,
-  },
-]
+};
 
 interface CategoryPageProps {
   params: Promise<{
-    slug: string
-  }>
+    slug: string;
+  }>;
 }
 
-export default async function CategoryPage({ params }: CategoryPageProps) {
-  const { slug } = await params
-  const category = categoryData[slug]
+export default function CategoryPage({ params }: CategoryPageProps) {
+  const resolvedParams = use(params);
+  const { slug } = resolvedParams;
+  const categoryInfo = categoryData[slug];
 
-  if (!category) {
-    notFound()
+  const [allProducts, setAllProducts] = useState<Product[]>([]);
+  const [displayedProducts, setDisplayedProducts] = useState<Product[]>([]);
+  const [sortOption, setSortOption] = useState("newest");
+  const [categories, setCategories] = useState<string[]>([]);
+  const [selectedCategory, setSelectedCategory] = useState(slug);
+
+  useEffect(() => {
+    const storedProducts = localStorage.getItem("products");
+    const products = storedProducts
+      ? JSON.parse(storedProducts)
+      : initialProducts;
+    setAllProducts(products);
+
+    const uniqueCategories = [
+      ...new Set(products.map((p: Product) => p.category)),
+    ];
+    setCategories(uniqueCategories as string[]);
+  }, []);
+
+  useEffect(() => {
+    let productsToDisplay;
+
+    if (selectedCategory === "featured") {
+      productsToDisplay = allProducts.filter((p) => p.isFeatured);
+    } else {
+      productsToDisplay =
+        selectedCategory === "all"
+          ? allProducts
+          : allProducts.filter(
+              (p) => p.category.toLowerCase() === selectedCategory.toLowerCase()
+            );
+    }
+
+    let sortedProducts = [...productsToDisplay];
+    switch (sortOption) {
+      case "price-low":
+        sortedProducts.sort((a, b) => a.price - b.price);
+        break;
+      case "price-high":
+        sortedProducts.sort((a, b) => b.price - a.price);
+        break;
+      case "newest":
+        // This assumes newer products are added later.
+        // A more robust solution would use a creation timestamp.
+        sortedProducts.reverse();
+        break;
+      default:
+        break;
+    }
+    setDisplayedProducts(sortedProducts);
+  }, [selectedCategory, sortOption, allProducts]);
+
+  if (!categoryInfo && slug !== 'all') {
+    notFound();
   }
+
+  const handleSortChange = (value: string) => {
+    setSortOption(value);
+  };
+
+  const handleCategoryChange = (value: string) => {
+    setSelectedCategory(value);
+  };
+  
+  const currentCategory = categoryData[selectedCategory] || { name: "All Products", description: "Browse all our collections." };
 
   return (
     <div className="min-h-screen flex flex-col">
       <Header />
 
       <main className="flex-1">
-        {/* Category Header */}
         <section className="bg-muted/30 py-12 md:py-16">
           <div className="container mx-auto px-4 text-center">
-            <h1 className="text-4xl md:text-5xl font-serif font-bold mb-4">{category.name}</h1>
-            <p className="text-lg text-muted-foreground max-w-2xl mx-auto leading-relaxed">{category.description}</p>
+            <h1 className="text-4xl md:text-5xl font-serif font-bold mb-4">
+              {currentCategory.name}
+            </h1>
+            <p className="text-lg text-muted-foreground max-w-2xl mx-auto leading-relaxed">
+              {currentCategory.description}
+            </p>
           </div>
         </section>
 
-        {/* Filters and Products */}
         <section className="py-12">
           <div className="container mx-auto px-4">
-            {/* Filter Bar */}
             <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-8">
-              <p className="text-sm text-muted-foreground">Showing {mockProducts.length} products</p>
+              <p className="text-sm text-muted-foreground">
+                Showing {displayedProducts.length} products
+              </p>
               <div className="flex flex-wrap gap-3 w-full sm:w-auto">
-                <Button variant="outline" size="sm" className="gap-2 bg-transparent">
-                  <SlidersHorizontal className="h-4 w-4" />
-                  Filters
-                </Button>
-                <Select defaultValue="featured">
+                <Select
+                  value={selectedCategory}
+                  onValueChange={handleCategoryChange}
+                >
+                  <SelectTrigger className="w-[180px]">
+                    <SelectValue placeholder="Filter by category" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">All</SelectItem>
+                    {categories.map((cat) => (
+                      <SelectItem key={cat} value={cat.toLowerCase()}>
+                        {cat}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                <Select value={sortOption} onValueChange={handleSortChange}>
                   <SelectTrigger className="w-[180px]">
                     <SelectValue placeholder="Sort by" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="featured">Featured</SelectItem>
+                    <SelectItem value="newest">Newest</SelectItem>
                     <SelectItem value="price-low">Price: Low to High</SelectItem>
                     <SelectItem value="price-high">Price: High to Low</SelectItem>
-                    <SelectItem value="newest">Newest</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
             </div>
 
-            {/* Products Grid */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-              {mockProducts.map((product) => (
-                <ProductCard key={product.id} {...product} />
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-8">
+              {displayedProducts.map((product) => (
+                <ProductCard key={product.id} product={product} />
               ))}
-            </div>
-
-            {/* Load More */}
-            <div className="text-center mt-12">
-              <Button variant="outline" size="lg">
-                Load More Products
-              </Button>
             </div>
           </div>
         </section>
       </main>
-
-      <Footer />
     </div>
-  )
+  );
 }
