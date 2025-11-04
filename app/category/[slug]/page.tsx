@@ -56,7 +56,7 @@ export default function CategoryPage({ params }: CategoryPageProps) {
   const [displayedProducts, setDisplayedProducts] = useState<Product[]>([]);
   const [sortOption, setSortOption] = useState("newest");
   const [categories, setCategories] = useState<string[]>([]);
-  const [selectedCategory, setSelectedCategory] = useState(slug);
+  const [selectedCategory, setSelectedCategory] = useState<string>("all");
 
   useEffect(() => {
     const storedProducts = localStorage.getItem("products");
@@ -69,6 +69,14 @@ export default function CategoryPage({ params }: CategoryPageProps) {
       ...new Set(products.map((p: Product) => p.category)),
     ];
     setCategories(uniqueCategories as string[]);
+    // If the route requested a specific category (e.g. "women" or "featured"),
+    // set that as the selected category. Otherwise default to "all" so
+    // the select shows "All Categories" visibly.
+    if (slug) {
+      setSelectedCategory(slug);
+    } else {
+      setSelectedCategory("all");
+    }
   }, []);
 
   useEffect(() => {
@@ -141,15 +149,24 @@ export default function CategoryPage({ params }: CategoryPageProps) {
                 Showing {displayedProducts.length} products
               </p>
               <div className="flex flex-wrap gap-3 w-full sm:w-auto">
-                <Select
-                  value={selectedCategory}
-                  onValueChange={handleCategoryChange}
-                >
+                <Select value={selectedCategory} onValueChange={handleCategoryChange}>
                   <SelectTrigger className="w-[180px]">
-                    <SelectValue placeholder="Filter by category" />
+                    {/* Compute a friendly label from the selected value so the select
+                        always displays something user-friendly (e.g. "All Categories"). */}
+                    <SelectValue>
+                      {(() => {
+                        if (selectedCategory === "all") return "All Categories";
+                        if (selectedCategory === "featured") return "Featured";
+                        // find original-cased category name
+                        const found = categories.find((c) => c.toLowerCase() === selectedCategory);
+                        if (found) return found;
+                        // fallback: capitalize the slug
+                        return selectedCategory.charAt(0).toUpperCase() + selectedCategory.slice(1);
+                      })()}
+                    </SelectValue>
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="all">All</SelectItem>
+                    <SelectItem value="all">All Categories</SelectItem>
                     {categories.map((cat) => (
                       <SelectItem key={cat} value={cat.toLowerCase()}>
                         {cat}

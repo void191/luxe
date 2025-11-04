@@ -45,7 +45,8 @@ export default function CartPage() {
 
   return (
     <div className="min-h-screen flex flex-col">
-      <Header />
+            import { useCart } from "@/lib/hooks/use-cart"
+            import { usePromo } from "@/lib/hooks/use-promo"
 
       <main className="flex-1">
         <div className="container mx-auto px-4 py-12">
@@ -59,6 +60,7 @@ export default function CartPage() {
                   <CardContent className="p-4">
                     <div className="flex gap-4">
                       <div className="relative w-24 h-32 flex-shrink-0 rounded-md overflow-hidden bg-muted">
+              const { appliedPromo, applyPromo, validatePromo, removeAppliedPromo } = usePromo();
                         <Image
                           src={item.image || "/placeholder.svg"}
                           alt={item.name}

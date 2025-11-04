@@ -23,6 +23,7 @@ export default function EditProductPage() {
   const [price, setPrice] = useState("");
   const [category, setCategory] = useState("");
   const [image, setImage] = useState<string | null>(null);
+  const [originalPrice, setOriginalPrice] = useState<string | undefined>(undefined);
   const [isFeatured, setIsFeatured] = useState(false);
 
   useEffect(() => {
@@ -36,6 +37,7 @@ export default function EditProductPage() {
       setName(productToEdit.name);
       setDescription(productToEdit.description);
       setPrice(productToEdit.price.toString());
+      setOriginalPrice(productToEdit.originalPrice?.toString());
       setCategory(productToEdit.category);
       setImage(productToEdit.image || null);
       setIsFeatured(productToEdit.isFeatured || false);
@@ -65,6 +67,7 @@ export default function EditProductPage() {
           name,
           description,
           price: parseFloat(price),
+          originalPrice: originalPrice ? parseFloat(originalPrice) : undefined,
           category,
           image,
           isFeatured,

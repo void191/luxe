@@ -10,31 +10,46 @@ import { Button } from "@/components/ui/button"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { ProductCard } from "@/components/product-card"
 import { useCart } from "@/lib/hooks/use-cart"
-import { useWishlist } from "@/lib/hooks/use-wishlist"
-import toast from "react-hot-toast"
-import { products } from "@/lib/products"
-import { notFound } from "next/navigation"
+import { useWishlist } from "@/lib/hooks/use-wishlist";
+import { useReviews } from "@/lib/hooks/use-reviews";
+import toast from "react-hot-toast";
+import { products } from "@/lib/products";
+import { notFound } from "next/navigation";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { Textarea } from "@/components/ui/textarea";
 
 export default function ProductPage({ params }: { params: { id: string } }) {
   const resolvedParams = use(params);
-  const product = products.find((p) => p.id === resolvedParams.id)
+  const product = products.find((p) => p.id === resolvedParams.id);
 
   if (!product) {
-    notFound()
+    notFound();
   }
 
-  const [selectedImage, setSelectedImage] = useState(0)
-  const [selectedSize, setSelectedSize] = useState(product.sizes?.[0] || "")
-  const [selectedColor, setSelectedColor] = useState(product.colors[0])
-  const [quantity, setQuantity] = useState(1)
-  const { addToCart } = useCart()
-  const { isInWishlist, toggleWishlist } = useWishlist()
-  const wishlisted = isInWishlist(product.id)
+  const [selectedImage, setSelectedImage] = useState(0);
+  const [selectedSize, setSelectedSize] = useState(product.sizes?.[0] || "");
+  const [selectedColor, setSelectedColor] = useState(product.colors[0]);
+  const [quantity, setQuantity] = useState(1);
+  const { addToCart } = useCart();
+  const { isInWishlist, toggleWishlist } = useWishlist();
+  const { addReview, getReviewsForProduct } = useReviews();
+
+  const [reviewRating, setReviewRating] = useState(5);
+  const [reviewText, setReviewText] = useState("");
+
+  const wishlisted = isInWishlist(product.id);
+  const productReviews = getReviewsForProduct(product.id);
+
+  const totalReviews = productReviews.length;
+  const averageRating =
+    totalReviews > 0
+      ? productReviews.reduce((acc, review) => acc + review.rating, 0) / totalReviews
+      : 0;
 
   const handleAddToCart = () => {
     if (!selectedSize) {
-      toast.error("Please select a size before adding to cart")
-      return
+      toast.error("Please select a size before adding to cart");
+      return;
     }
     addToCart(
       {
@@ -46,19 +61,40 @@ export default function ProductPage({ params }: { params: { id: string } }) {
         color: selectedColor.name,
       },
       quantity
-    )
-    toast.success("Added to cart!")
-  }
+    );
+    toast.success("Added to cart!");
+  };
 
   const handleWishlistToggle = () => {
-    toggleWishlist(product.id)
-  }
+    toggleWishlist(product);
+  };
+
+  const handleReviewSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (reviewText.trim().length < 10) {
+      toast.error("Review must be at least 10 characters long.");
+      return;
+    }
+    addReview({
+      id: crypto.randomUUID(),
+      productId: product.id,
+      author: "Anonymous", // In a real app, this would be the logged-in user
+      rating: reviewRating,
+      text: reviewText,
+      date: new Date().toISOString(),
+    });
+    toast.success("Thank you for your review!");
+    setReviewText("");
+    setReviewRating(5);
+  };
 
   const discount = product.originalPrice
     ? Math.round(((product.originalPrice - product.price) / product.originalPrice) * 100)
-    : 0
-    
-  const relatedProducts = products.filter(p => p.category === product.category && p.id !== product.id).slice(0, 4);
+    : 0;
+
+  const relatedProducts = products
+    .filter((p) => p.category === product.category && p.id !== product.id)
+    .slice(0, 4);
 
   return (
     <div className="min-h-screen flex flex-col">
@@ -136,13 +172,15 @@ export default function ProductPage({ params }: { params: { id: string } }) {
                       <Star
                         key={i}
                         className={`h-5 w-5 ${
-                          i < Math.floor(product.rating) ? "fill-accent text-accent" : "text-muted-foreground"
+                          i < Math.floor(averageRating)
+                            ? "fill-accent text-accent"
+                            : "text-muted-foreground"
                         }`}
                       />
                     ))}
                   </div>
                   <span className="text-sm text-muted-foreground">
-                    {product.rating} ({product.reviews} reviews)
+                    {averageRating.toFixed(1)} ({totalReviews} reviews)
                   </span>
                 </div>
                 <div className="flex items-center gap-3 mb-6">
@@ -166,12 +204,12 @@ export default function ProductPage({ params }: { params: { id: string } }) {
                     <button
                       key={color.name}
                       onClick={() => setSelectedColor(color)}
-                      className={`w-10 h-10 rounded-full border-2 transition-all ${
-                        selectedColor.name === color.name
-                          ? "border-primary scale-110"
-                          : "border-border hover:border-primary/50"
-                      }`}
-                      style={{ backgroundColor: color.value }}
+                      className="w-10 h-10 rounded-full border-2 transition-all"
+                      style={{
+                        backgroundColor: color.value,
+                        boxShadow: selectedColor.name === color.name ? `0 0 0 3px ${color.value}` : 'none',
+                        outline: selectedColor.name === color.name ? `2px solid var(--primary)` : 'none',
+                      }}
                       aria-label={color.name}
                       title={color.name}
                     />
@@ -242,8 +280,8 @@ export default function ProductPage({ params }: { params: { id: string } }) {
                   onClick={handleWishlistToggle}
                 >
                   <Heart
-                    className={`h-5 w-5 ${
-                      wishlisted ? "fill-current text-red-500" : ""
+                    className={`h-5 w-5 transition-colors ${
+                      wishlisted ? "fill-red-500 text-red-500" : ""
                     }`}
                   />
                   <span className="sr-only">Toggle wishlist</span>
@@ -292,7 +330,7 @@ export default function ProductPage({ params }: { params: { id: string } }) {
                 value="reviews"
                 className="rounded-none border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:bg-transparent"
               >
-                Reviews ({product.reviews})
+                Reviews ({totalReviews})
               </TabsTrigger>
               <TabsTrigger
                 value="shipping"
@@ -314,7 +352,89 @@ export default function ProductPage({ params }: { params: { id: string } }) {
               </div>
             </TabsContent>
             <TabsContent value="reviews" className="mt-6">
-              <p className="text-muted-foreground">Customer reviews will be displayed here.</p>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-12">
+                {/* Review Form */}
+                <div className="space-y-6">
+                  <h3 className="text-2xl font-semibold">Write a Review</h3>
+                  <form onSubmit={handleReviewSubmit} className="space-y-4">
+                    <div>
+                      <label className="block text-sm font-medium mb-2">Your Rating</label>
+                      <div className="flex items-center gap-1">
+                        {[1, 2, 3, 4, 5].map((star) => (
+                          <button
+                            type="button"
+                            key={star}
+                            onClick={() => setReviewRating(star)}
+                            className="transition-colors"
+                          >
+                            <Star
+                              className={`h-6 w-6 ${
+                                star <= reviewRating
+                                  ? "fill-accent text-accent"
+                                  : "text-muted-foreground"
+                              }`}
+                            />
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+                    <div>
+                      <label htmlFor="review-text" className="block text-sm font-medium mb-2">
+                        Your Review
+                      </label>
+                      <Textarea
+                        id="review-text"
+                        value={reviewText}
+                        onChange={(e) => setReviewText(e.target.value)}
+                        placeholder="Share your thoughts about the product..."
+                        rows={5}
+                        required
+                      />
+                    </div>
+                    <Button type="submit">Submit Review</Button>
+                  </form>
+                </div>
+
+                {/* Review List */}
+                <div className="space-y-8">
+                  <h3 className="text-2xl font-semibold">Customer Reviews</h3>
+                  {totalReviews > 0 ? (
+                    <div className="space-y-6">
+                      {productReviews.map((review) => (
+                        <div key={review.id} className="flex gap-4">
+                          <Avatar>
+                            <AvatarImage src={`https://api.dicebear.com/6.x/initials/svg?seed=${review.author}`} />
+                            <AvatarFallback>{review.author.charAt(0)}</AvatarFallback>
+                          </Avatar>
+                          <div className="flex-1">
+                            <div className="flex items-center justify-between">
+                              <p className="font-semibold">{review.author}</p>
+                              <p className="text-sm text-muted-foreground">
+                                {new Date(review.date).toLocaleDateString()}
+                              </p>
+                            </div>
+                            <div className="flex items-center gap-1 my-1">
+                              {Array.from({ length: 5 }).map((_, i) => (
+                                <Star
+                                  key={i}
+                                  className={`h-4 w-4 ${
+                                    i < review.rating
+                                      ? "fill-accent text-accent"
+                                      : "text-muted-foreground"
+                                  }`}
+                                />
+                              ))}
+                            </div>
+                            <p className="text-muted-foreground">{review.text}</p>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  ) : (
+                    <p className="text-muted-foreground">This product has no reviews yet. Be the first to write one!</p>
+                  )}
+                </div>
+              </div>
             </TabsContent>
             <TabsContent value="shipping" className="mt-6">
               <div className="prose max-w-none">
@@ -338,11 +458,12 @@ export default function ProductPage({ params }: { params: { id: string } }) {
           <h2 className="text-2xl md:text-3xl font-serif font-bold mb-8">You May Also Like</h2>
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
             {relatedProducts.map((p) => (
-              <ProductCard key={p.id} {...p} />
+              <ProductCard key={p.id} product={p} />
             ))}
           </div>
         </section>
       </main>
     </div>
-  )
+  );
 }
+

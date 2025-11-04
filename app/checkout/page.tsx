@@ -14,17 +14,20 @@ import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group"
 import { Checkbox } from "@/components/ui/checkbox"
 import { useCart } from "@/lib/hooks/use-cart"
 import { useOrderHistory } from "@/lib/hooks/use-order-history"
+import { usePromo } from "@/lib/hooks/use-promo"
 import toast from "react-hot-toast"
 import { useRouter } from "next/navigation"
 
 export default function CheckoutPage() {
   const { cart, subtotal, tax, total, clearCart } = useCart()
   const { addOrder } = useOrderHistory()
+  const { appliedPromo, validatePromo, recordPromoUse, removeAppliedPromo } = usePromo()
   const router = useRouter()
 
   const [shippingMethod, setShippingMethod] = useState("standard")
   const shippingCost = shippingMethod === "express" ? 25 : 0
-  const finalTotal = total + shippingCost
+  const promoDiscount = appliedPromo ? (validatePromo(appliedPromo.code, subtotal).discount ?? 0) : 0
+  const finalTotal = total + shippingCost - promoDiscount
 
   const [cardDetails, setCardDetails] = useState({
     number: "",
@@ -65,6 +68,11 @@ export default function CheckoutPage() {
       items: cart,
       total: finalTotal,
     })
+    // record promo use (if applicable)
+    if (appliedPromo) {
+      recordPromoUse(appliedPromo.code)
+      removeAppliedPromo()
+    }
 
     toast.success("Order placed successfully!")
     clearCart()

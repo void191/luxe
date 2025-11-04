@@ -25,7 +25,9 @@ export const metadata: Metadata = {
 
 import { CartProvider } from "@/lib/hooks/use-cart";
 import { WishlistProvider } from "@/lib/hooks/use-wishlist";
+import { ReviewsProvider } from "@/lib/hooks/use-reviews";
 import { OrderHistoryProvider } from "@/lib/hooks/use-order-history";
+import { PromoProvider } from "@/lib/hooks/use-promo";
 
 export default function RootLayout({
   children,
@@ -35,15 +37,19 @@ export default function RootLayout({
   return (
     <html lang="en" suppressHydrationWarning>
       <body className={`${inter.className} font-sans antialiased`}>
-        <WishlistProvider>
-          <CartProvider>
-            <OrderHistoryProvider>
-              {children}
-              <Toaster />
-              <Analytics />
-            </OrderHistoryProvider>
-          </CartProvider>
-        </WishlistProvider>
+        <ReviewsProvider>
+          <WishlistProvider>
+            <PromoProvider>
+              <CartProvider>
+                <OrderHistoryProvider>
+                  {children}
+                  <Toaster />
+                  <Analytics />
+                </OrderHistoryProvider>
+              </CartProvider>
+            </PromoProvider>
+          </WishlistProvider>
+        </ReviewsProvider>
       </body>
     </html>
   );

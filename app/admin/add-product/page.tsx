@@ -19,6 +19,7 @@ export default function AddProductPage() {
   const [name, setName] = useState("");
   const [description, setDescription] = useState("");
   const [price, setPrice] = useState("");
+  const [originalPrice, setOriginalPrice] = useState("");
   const [image, setImage] = useState<File | null>(null);
   const [category, setCategory] = useState("");
   const [isFeatured, setIsFeatured] = useState(false);
@@ -44,6 +45,7 @@ export default function AddProductPage() {
         name,
         description,
         price: parseFloat(price),
+        originalPrice: originalPrice ? parseFloat(originalPrice) : undefined,
         image: reader.result as string,
         category,
         isNew: true,
@@ -105,6 +107,20 @@ export default function AddProductPage() {
                         type="number"
                         value={price}
                         onChange={(e) => setPrice(e.target.value)}
+                        className="pl-7 hide-arrows"
+                      />
+                    </div>
+                  </div>
+                  <div>
+                    <Label htmlFor="originalPrice">Original Price (optional)</Label>
+                    <div className="relative mt-1">
+                      <span className="absolute inset-y-0 left-0 flex items-center pl-3 text-muted-foreground">$
+                      </span>
+                      <Input
+                        id="originalPrice"
+                        type="number"
+                        value={originalPrice}
+                        onChange={(e) => setOriginalPrice(e.target.value)}
                         className="pl-7 hide-arrows"
                       />
                     </div>
