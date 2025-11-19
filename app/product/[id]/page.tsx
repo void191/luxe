@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, use } from "react"
+import { useState, useEffect, use } from "react"
 import Image from "next/image"
 import Link from "next/link"
 import { Heart, Minus, Plus, ShoppingBag, Star, Truck, RefreshCw, Shield } from "lucide-react"
@@ -13,22 +13,94 @@ import { useCart } from "@/lib/hooks/use-cart"
 import { useWishlist } from "@/lib/hooks/use-wishlist";
 import { useReviews } from "@/lib/hooks/use-reviews";
 import toast from "react-hot-toast";
-import { products } from "@/lib/products";
+import { products as initialProducts, Product } from "@/lib/products";
 import { notFound } from "next/navigation";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Textarea } from "@/components/ui/textarea";
+import { Skeleton } from "@/components/ui/skeleton";
 
-export default function ProductPage({ params }: { params: { id: string } }) {
-  const resolvedParams = use(params);
-  const product = products.find((p) => p.id === resolvedParams.id);
+function ProductLoading() {
+  return (
+    <div className="min-h-screen flex flex-col">
+      <Header />
+      <main className="flex-1 container mx-auto px-4 py-8">
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-12">
+          {/* Image Skeleton */}
+          <div className="space-y-4">
+            <Skeleton className="relative aspect-[3/4] w-full" />
+            <div className="grid grid-cols-3 gap-4">
+              <Skeleton className="aspect-[3/4] w-full" />
+              <Skeleton className="aspect-[3/4] w-full" />
+              <Skeleton className="aspect-[3/4] w-full" />
+            </div>
+          </div>
+          {/* Product Info Skeleton */}
+          <div className="space-y-6">
+            <Skeleton className="h-6 w-1/4" />
+            <Skeleton className="h-10 w-3/4" />
+            <div className="flex items-center gap-4">
+              <Skeleton className="h-6 w-24" />
+              <Skeleton className="h-6 w-20" />
+            </div>
+            <Skeleton className="h-10 w-1/3" />
+            <Skeleton className="h-20 w-full" />
+            <div className="space-y-4">
+              <Skeleton className="h-8 w-1/4" />
+              <div className="flex gap-3">
+                <Skeleton className="h-10 w-10 rounded-full" />
+                <Skeleton className="h-10 w-10 rounded-full" />
+                <Skeleton className="h-10 w-10 rounded-full" />
+              </div>
+            </div>
+            <div className="space-y-4">
+              <Skeleton className="h-8 w-1/4" />
+              <div className="flex gap-3">
+                <Skeleton className="h-12 w-16" />
+                <Skeleton className="h-12 w-16" />
+                <Skeleton className="h-12 w-16" />
+              </div>
+            </div>
+            <div className="flex gap-4">
+              <Skeleton className="h-12 flex-1" />
+              <Skeleton className="h-12 w-12" />
+            </div>
+          </div>
+        </div>
+      </main>
+      <Footer />
+    </div>
+  );
+}
 
-  if (!product) {
-    notFound();
-  }
+export default function ProductPage({ params }: { params: Promise<{ id: string }> }) {
+  const { id } = use(params);
+  const [product, setProduct] = useState<Product | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [allProducts, setAllProducts] = useState<Product[]>([]);
+
+  useEffect(() => {
+    const storedProducts = localStorage.getItem("products");
+    const products = storedProducts
+      ? JSON.parse(storedProducts)
+      : initialProducts;
+    setAllProducts(products);
+  }, []);
+
+  useEffect(() => {
+    if (allProducts.length > 0) {
+      const foundProduct = allProducts.find((p) => p.id === id);
+      if (foundProduct) {
+        setProduct(foundProduct);
+      } else {
+        notFound();
+      }
+      setLoading(false);
+    }
+  }, [id, allProducts]);
 
   const [selectedImage, setSelectedImage] = useState(0);
-  const [selectedSize, setSelectedSize] = useState(product.sizes?.[0] || "");
-  const [selectedColor, setSelectedColor] = useState(product.colors[0]);
+  const [selectedSize, setSelectedSize] = useState("");
+  const [selectedColor, setSelectedColor] = useState<{ name: string; value: string } | null>(null);
   const [quantity, setQuantity] = useState(1);
   const { addToCart } = useCart();
   const { isInWishlist, toggleWishlist } = useWishlist();
@@ -36,6 +108,22 @@ export default function ProductPage({ params }: { params: { id: string } }) {
 
   const [reviewRating, setReviewRating] = useState(5);
   const [reviewText, setReviewText] = useState("");
+
+  useEffect(() => {
+    if (product) {
+      setSelectedSize(product.sizes?.[0] || "");
+      setSelectedColor(product.colors?.[0] || null);
+    }
+  }, [product]);
+
+  if (loading || !product) {
+    return <ProductLoading />;
+  }
+  
+  if (!selectedColor && product.colors && product.colors.length > 0) {
+    setSelectedColor(product.colors[0]);
+    return <ProductLoading />;
+  }
 
   const wishlisted = isInWishlist(product.id);
   const productReviews = getReviewsForProduct(product.id);
@@ -47,7 +135,7 @@ export default function ProductPage({ params }: { params: { id: string } }) {
       : 0;
 
   const handleAddToCart = () => {
-    if (!selectedSize) {
+    if (product.sizes && product.sizes.length > 0 && !selectedSize) {
       toast.error("Please select a size before adding to cart");
       return;
     }
@@ -58,7 +146,7 @@ export default function ProductPage({ params }: { params: { id: string } }) {
         price: product.price,
         image: product.images[0],
         size: selectedSize,
-        color: selectedColor.name,
+        color: selectedColor?.name || '',
       },
       quantity
     );
@@ -92,7 +180,7 @@ export default function ProductPage({ params }: { params: { id: string } }) {
     ? Math.round(((product.originalPrice - product.price) / product.originalPrice) * 100)
     : 0;
 
-  const relatedProducts = products
+  const relatedProducts = allProducts
     .filter((p) => p.category === product.category && p.id !== product.id)
     .slice(0, 4);
 
@@ -195,6 +283,7 @@ export default function ProductPage({ params }: { params: { id: string } }) {
               </div>
 
               {/* Color Selection */}
+              {product.colors && product.colors.length > 0 && selectedColor && (
               <div>
                 <label className="block text-sm font-semibold mb-3">
                   Color: <span className="font-normal text-muted-foreground">{selectedColor.name}</span>
@@ -216,8 +305,10 @@ export default function ProductPage({ params }: { params: { id: string } }) {
                   ))}
                 </div>
               </div>
+              )}
 
               {/* Size Selection */}
+              {product.sizes && product.sizes.length > 0 && (
               <div>
                 <label className="block text-sm font-semibold mb-3">Size</label>
                 <div className="flex gap-3">
@@ -236,6 +327,7 @@ export default function ProductPage({ params }: { params: { id: string } }) {
                   ))}
                 </div>
               </div>
+              )}
 
               {/* Quantity */}
               <div>
@@ -268,7 +360,7 @@ export default function ProductPage({ params }: { params: { id: string } }) {
                 <Button
                   size="lg"
                   className="flex-1"
-                  disabled={!selectedSize || !product.inStock}
+                  disabled={!product.inStock}
                   onClick={handleAddToCart}
                 >
                   <ShoppingBag className="mr-2 h-5 w-5" />
@@ -463,7 +555,7 @@ export default function ProductPage({ params }: { params: { id: string } }) {
           </div>
         </section>
       </main>
+      <Footer />
     </div>
   );
 }
-

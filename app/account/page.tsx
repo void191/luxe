@@ -1,5 +1,6 @@
 "use client";
 
+import { useState, useEffect } from "react";
 import { Header } from "@/components/header";
 import { Footer } from "@/components/footer";
 import { Button } from "@/components/ui/button";
@@ -11,9 +12,7 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Package, Heart, MapPin, CreditCard, User } from "lucide-react";
+import { Package, Heart, User } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
 import { format } from "date-fns";
@@ -21,16 +20,62 @@ import { useWishlist } from "@/lib/hooks/use-wishlist";
 import { products } from "@/lib/products";
 import { useCart } from "@/lib/hooks/use-cart";
 import { Product } from "@/lib/types";
-import { useOrderHistory } from "@/lib/hooks/use-order-history";
 import { useSearchParams } from "next/navigation";
+import { useAuth } from "@/lib/hooks/use-auth";
+import { getToken } from "@/lib/auth";
+
+interface Order {
+  id: number;
+  total: number;
+  status: string;
+  date: string;
+  items: {
+    id: number;
+    name: string;
+    image: string;
+    quantity: number;
+    price: number;
+  }[];
+}
 
 export default function AccountPage() {
   const { wishlist } = useWishlist();
   const { addToCart } = useCart();
-  const { orders } = useOrderHistory();
+  const { user } = useAuth();
+  const [orders, setOrders] = useState<Order[]>([]);
+  const [loadingOrders, setLoadingOrders] = useState(true);
   const wishlistItems = products.filter((p: Product) => wishlist.includes(p.id));
   const searchParams = useSearchParams();
   const defaultTab = searchParams.get("tab") || "orders";
+
+  useEffect(() => {
+    fetchOrders();
+  }, []);
+
+  const fetchOrders = async () => {
+    try {
+      const token = getToken();
+      if (!token) {
+        setLoadingOrders(false);
+        return;
+      }
+
+      const response = await fetch("/api/orders", {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        setOrders(data);
+      }
+    } catch (error) {
+      console.error("Error fetching orders:", error);
+    } finally {
+      setLoadingOrders(false);
+    }
+  };
 
   const addToCartFromWishlist = (item: Product) => {
     addToCart(
@@ -39,7 +84,6 @@ export default function AccountPage() {
         name: item.name,
         price: item.price,
         image: item.image || "",
-        // Assuming default size and color for simplicity
         size: "M",
         color: "Default",
       },
@@ -59,7 +103,7 @@ export default function AccountPage() {
           </h1>
 
           <Tabs defaultValue={defaultTab} className="space-y-6">
-            <TabsList className="grid w-full grid-cols-2 lg:grid-cols-5 h-auto">
+            <TabsList className="grid w-full grid-cols-3 lg:grid-cols-3 h-auto">
               <TabsTrigger value="orders" className="gap-2">
                 <Package className="h-4 w-4" />
                 <span className="hidden sm:inline">Orders</span>
@@ -67,10 +111,6 @@ export default function AccountPage() {
               <TabsTrigger value="wishlist" className="gap-2">
                 <Heart className="h-4 w-4" />
                 <span className="hidden sm:inline">Wishlist</span>
-              </TabsTrigger>
-              <TabsTrigger value="addresses" className="gap-2">
-                <MapPin className="h-4 w-4" />
-                <span className="hidden sm:inline">Addresses</span>
               </TabsTrigger>
               <TabsTrigger value="profile" className="gap-2">
                 <User className="h-4 w-4" />
@@ -80,14 +120,20 @@ export default function AccountPage() {
 
             {/* Orders Tab */}
             <TabsContent value="orders" className="space-y-4">
-              {orders.length > 0 ? (
+              {loadingOrders ? (
+                <Card>
+                  <CardContent className="flex items-center justify-center p-12">
+                    <p>Loading orders...</p>
+                  </CardContent>
+                </Card>
+              ) : orders.length > 0 ? (
                 orders.map((order) => (
                   <Card key={order.id}>
                     <CardHeader>
                       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
                         <div>
                           <CardTitle className="text-lg">
-                            Order {order.id}
+                            Order #{order.id}
                           </CardTitle>
                           <CardDescription>
                             Placed on {format(new Date(order.date), "PPP")}
@@ -96,12 +142,14 @@ export default function AccountPage() {
                         <div className="flex items-center gap-4">
                           <span
                             className={`text-sm font-medium px-3 py-1 rounded-full ${
-                              order.status === "Delivered"
+                              order.status === "completed"
                                 ? "bg-green-100 text-green-700"
-                                : "bg-blue-100 text-blue-700"
+                                : order.status === "shipped"
+                                  ? "bg-purple-100 text-purple-700"
+                                  : "bg-blue-100 text-blue-700"
                             }`}
                           >
-                            {order.status}
+                            {order.status.charAt(0).toUpperCase() + order.status.slice(1)}
                           </span>
                           <span className="font-semibold">
                             ${order.total.toFixed(2)}
@@ -124,7 +172,7 @@ export default function AccountPage() {
                             <div className="flex-1">
                               <p className="font-medium">{item.name}</p>
                               <p className="text-sm text-muted-foreground">
-                                Quantity: {item.quantity}
+                                Quantity: {item.quantity} × ${item.price.toFixed(2)}
                               </p>
                             </div>
                           </div>
@@ -134,7 +182,7 @@ export default function AccountPage() {
                         <Button variant="outline" size="sm">
                           View Details
                         </Button>
-                        {order.status === "Delivered" && (
+                        {order.status === "completed" && (
                           <Button variant="outline" size="sm">
                             Buy Again
                           </Button>
@@ -198,56 +246,6 @@ export default function AccountPage() {
               </div>
             </TabsContent>
 
-            {/* Addresses Tab */}
-            <TabsContent value="addresses" className="space-y-4">
-              <Card>
-                <CardHeader>
-                  <CardTitle>Shipping Address</CardTitle>
-                </CardHeader>
-                <CardContent className="space-y-4">
-                  <div>
-                    <p className="font-medium">John Doe</p>
-                    <p className="text-sm text-muted-foreground">
-                      123 Main Street, Apt 4B
-                    </p>
-                    <p className="text-sm text-muted-foreground">
-                      New York, NY 10001
-                    </p>
-                    <p className="text-sm text-muted-foreground">
-                      (555) 123-4567
-                    </p>
-                  </div>
-                  <div className="flex gap-3">
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={() =>
-                        alert("Edit functionality not implemented yet.")
-                      }
-                    >
-                      Edit
-                    </Button>
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={() =>
-                        alert("Remove functionality not implemented yet.")
-                      }
-                    >
-                      Remove
-                    </Button>
-                  </div>
-                </CardContent>
-              </Card>
-              <Button
-                onClick={() =>
-                  alert("Add New Address functionality not implemented yet.")
-                }
-              >
-                Add New Address
-              </Button>
-            </TabsContent>
-
             {/* Profile Tab */}
             <TabsContent value="profile">
               <Card>
@@ -255,11 +253,20 @@ export default function AccountPage() {
                   <CardTitle>Profile Information</CardTitle>
                 </CardHeader>
                 <CardContent className="space-y-4">
-                  <div className="space-y-1">
-                    <p className="font-medium">John Doe</p>
-                    <p className="text-sm text-muted-foreground">john.doe@example.com</p>
-                    <p className="text-sm text-muted-foreground">(555) 123-4567</p>
-                  </div>
+                  {user ? (
+                    <div className="space-y-1">
+                      <p className="font-medium">
+                        {user.first_name && user.last_name
+                          ? `${user.first_name} ${user.last_name}`
+                          : user.email}
+                      </p>
+                      <p className="text-sm text-muted-foreground">{user.email}</p>
+                    </div>
+                  ) : (
+                    <div className="space-y-1">
+                      <p className="text-sm text-muted-foreground">Not logged in</p>
+                    </div>
+                  )}
                   <Button asChild>
                     <Link href="/account/profile">Edit Profile</Link>
                   </Button>
@@ -269,6 +276,8 @@ export default function AccountPage() {
           </Tabs>
         </div>
       </main>
+
+      <Footer />
     </div>
   );
 }

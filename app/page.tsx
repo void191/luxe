@@ -6,43 +6,18 @@ import { Header } from "@/components/header"
 import { Footer } from "@/components/footer"
 import { ProductCard } from "@/components/product-card"
 
-// Mock data - will be replaced with real data later
-const featuredProducts = [
-  {
-    id: "1",
-    name: "Cashmere Blend Sweater",
-    price: 189.99,
-    originalPrice: 249.99,
-    image: "/luxury-cashmere-sweater.png",
-    category: "Women",
-    isNew: false,
-  },
-  {
-    id: "2",
-    name: "Italian Leather Handbag",
-    price: 449.99,
-    image: "/luxury-leather-handbag.jpg",
-    category: "Accessories",
-    isNew: true,
-  },
-  {
-    id: "3",
-    name: "Tailored Wool Blazer",
-    price: 329.99,
-    image: "/luxury-wool-blazer.png",
-    category: "Men",
-    isNew: true,
-  },
-  {
-    id: "4",
-    name: "Silk Scarf Collection",
-    price: 89.99,
-    originalPrice: 129.99,
-    image: "/luxury-silk-scarf.png",
-    category: "Accessories",
-    isNew: false,
-  },
-]
+async function getFeaturedProducts() {
+  try {
+    const res = await fetch(`${process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:3000'}/api/products`, {
+      cache: 'no-store'
+    });
+    if (!res.ok) return [];
+    const products = await res.json();
+    return products.filter((p: any) => p.is_featured).slice(0, 4);
+  } catch {
+    return [];
+  }
+}
 
 const categories = [
   {
@@ -62,7 +37,9 @@ const categories = [
   },
 ]
 
-export default function HomePage() {
+export default async function HomePage() {
+  const featuredProducts = await getFeaturedProducts();
+
   return (
     <div className="min-h-screen flex flex-col">
       <Header />
@@ -117,11 +94,8 @@ export default function HomePage() {
             </div>
           </div>
         </section>
-
-
-
-
       </main>
+      <Footer />
     </div>
   )
 }

@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { Header } from "@/components/header";
+import { AdminAuthGuard } from "@/components/admin-auth-guard";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -28,28 +29,35 @@ import {
 import { MoreHorizontal, PlusCircle, Users, ShoppingBag, Package } from "lucide-react";
 import Link from "next/link";
 import { products as initialProducts } from "@/lib/products";
-import { useOrderHistory } from "@/lib/hooks/use-order-history";
 import { Product } from "@/lib/types";
+import { toast } from "react-hot-toast";
+import { getToken } from "@/lib/auth";
 
-// Mock user data for demonstration
-const mockUsers = [
-  { id: "1", name: "John Doe", email: "john.doe@example.com", role: "Customer" },
-  { id: "2", name: "Jane Smith", email: "jane.smith@example.com", role: "Customer" },
-];
+interface User {
+  id: number;
+  email: string;
+  first_name: string;
+  last_name: string;
+  is_admin: boolean;
+}
+
+interface Order {
+  id: number;
+  total: number;
+  status: string;
+  date: string;
+}
 
 export default function AdminDashboardPage() {
   const router = useRouter();
   const [products, setProducts] = useState<Product[]>([]);
-  const { orders } = useOrderHistory();
-  const [users, setUsers] = useState(mockUsers);
+  const [orders, setOrders] = useState<Order[]>([]);
+  const [users, setUsers] = useState<User[]>([]);
   const [isClient, setIsClient] = useState(false);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     setIsClient(true);
-    const isAdmin = localStorage.getItem("isAdmin");
-    if (isAdmin !== "true") {
-      router.push("/admin-login");
-    }
     
     const storedProducts = localStorage.getItem("products");
     if (storedProducts) {
@@ -57,7 +65,54 @@ export default function AdminDashboardPage() {
     } else {
       setProducts(initialProducts);
     }
-  }, [router]);
+
+    fetchUsers();
+    fetchOrders();
+  }, []);
+
+  const fetchUsers = async () => {
+    try {
+      const token = getToken();
+      const response = await fetch("/api/admin/users", {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        setUsers(data);
+      } else {
+        toast.error("Failed to fetch users");
+      }
+    } catch (error) {
+      console.error("Error fetching users:", error);
+      toast.error("Error loading users");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const fetchOrders = async () => {
+    try {
+      const token = getToken();
+      const response = await fetch("/api/admin/orders", {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        setOrders(data);
+      } else {
+        toast.error("Failed to fetch orders");
+      }
+    } catch (error) {
+      console.error("Error fetching orders:", error);
+      toast.error("Error loading orders");
+    }
+  };
 
   const handleDeleteProduct = (id: string) => {
     const updatedProducts = products.filter((p) => p.id !== id);
@@ -65,16 +120,35 @@ export default function AdminDashboardPage() {
     localStorage.setItem("products", JSON.stringify(updatedProducts));
   };
 
-  const handleDeleteUser = (id: string) => {
-    const updatedUsers = users.filter((u) => u.id !== id);
-    setUsers(updatedUsers);
+  const handleDeleteUser = async (id: number) => {
+    if (!confirm("Are you sure you want to delete this user?")) return;
+
+    try {
+      const token = getToken();
+      const response = await fetch(`/api/admin/users/${id}`, {
+        method: "DELETE",
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
+
+      if (response.ok) {
+        toast.success("User deleted successfully");
+        fetchUsers();
+      } else {
+        toast.error("Failed to delete user");
+      }
+    } catch (error) {
+      console.error("Error deleting user:", error);
+      toast.error("Error deleting user");
+    }
   };
 
   return (
-    <div className="min-h-screen flex flex-col">
-      <Header />
-      <main className="flex-1 bg-muted/30">
-        <div className="container mx-auto px-4 py-12">
+    <AdminAuthGuard>
+      <div className="min-h-screen flex flex-col">
+        <Header />
+        <main className="flex-1 bg-muted/30">\n          <div className="container mx-auto px-4 py-12">
           <div className="flex items-center justify-between mb-8">
             <h1 className="text-3xl font-serif font-bold">Admin Dashboard</h1>
             <Button asChild>
@@ -184,14 +258,36 @@ export default function AdminDashboardPage() {
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {isClient && orders.map((order) => (
-                    <TableRow key={order.id}>
-                      <TableCell className="font-medium">{order.id}</TableCell>
-                      <TableCell>{new Date(order.date).toLocaleDateString()}</TableCell>
-                      <TableCell>${order.total.toFixed(2)}</TableCell>
-                      <TableCell>{order.status}</TableCell>
+                  {orders.length === 0 ? (
+                    <TableRow>
+                      <TableCell colSpan={4} className="text-center text-muted-foreground">
+                        No orders found
+                      </TableCell>
                     </TableRow>
-                  ))}
+                  ) : (
+                    orders.slice(0, 5).map((order) => (
+                      <TableRow key={order.id}>
+                        <TableCell className="font-medium">#{order.id}</TableCell>
+                        <TableCell>{new Date(order.date).toLocaleDateString()}</TableCell>
+                        <TableCell>${order.total.toFixed(2)}</TableCell>
+                        <TableCell>
+                          <span
+                            className={`text-xs font-medium px-2.5 py-1 rounded-full ${
+                              order.status === "completed"
+                                ? "bg-green-100 text-green-700"
+                                : order.status === "processing"
+                                  ? "bg-blue-100 text-blue-700"
+                                  : order.status === "shipped"
+                                    ? "bg-purple-100 text-purple-700"
+                                    : "bg-yellow-100 text-yellow-700"
+                            }`}
+                          >
+                            {order.status.charAt(0).toUpperCase() + order.status.slice(1)}
+                          </span>
+                        </TableCell>
+                      </TableRow>
+                    ))
+                  )}
                 </TableBody>
               </Table>
             </CardContent>
@@ -204,47 +300,63 @@ export default function AdminDashboardPage() {
               <CardDescription>Manage your users.</CardDescription>
             </CardHeader>
             <CardContent>
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>Name</TableHead>
-                    <TableHead>Email</TableHead>
-                    <TableHead>Role</TableHead>
-                    <TableHead>Actions</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {isClient && users.map((user) => (
-                    <TableRow key={user.id}>
-                      <TableCell className="font-medium">{user.name}</TableCell>
-                      <TableCell>{user.email}</TableCell>
-                      <TableCell>{user.role}</TableCell>
-                      <TableCell>
-                        <DropdownMenu>
-                          <DropdownMenuTrigger asChild>
-                            <Button variant="ghost" className="h-8 w-8 p-0">
-                              <span className="sr-only">Open menu</span>
-                              <MoreHorizontal className="h-4 w-4" />
-                            </Button>
-                          </DropdownMenuTrigger>
-                          <DropdownMenuContent align="end">
-                            <DropdownMenuItem
-                              onClick={() => handleDeleteUser(user.id)}
-                              className="text-destructive"
-                            >
-                              Remove User
-                            </DropdownMenuItem>
-                          </DropdownMenuContent>
-                        </DropdownMenu>
-                      </TableCell>
+              {loading ? (
+                <p>Loading users...</p>
+              ) : (
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>Name</TableHead>
+                      <TableHead>Email</TableHead>
+                      <TableHead>Role</TableHead>
+                      <TableHead>Actions</TableHead>
                     </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
+                  </TableHeader>
+                  <TableBody>
+                    {users.length === 0 ? (
+                      <TableRow>
+                        <TableCell colSpan={4} className="text-center text-muted-foreground">
+                          No users found
+                        </TableCell>
+                      </TableRow>
+                    ) : (
+                      users.map((user) => (
+                        <TableRow key={user.id}>
+                          <TableCell className="font-medium">
+                            {user.first_name} {user.last_name}
+                          </TableCell>
+                          <TableCell>{user.email}</TableCell>
+                          <TableCell>{user.is_admin ? "Admin" : "Customer"}</TableCell>
+                          <TableCell>
+                            <DropdownMenu>
+                              <DropdownMenuTrigger asChild>
+                                <Button variant="ghost" className="h-8 w-8 p-0">
+                                  <span className="sr-only">Open menu</span>
+                                  <MoreHorizontal className="h-4 w-4" />
+                                </Button>
+                              </DropdownMenuTrigger>
+                              <DropdownMenuContent align="end">
+                                <DropdownMenuItem
+                                  onClick={() => handleDeleteUser(user.id)}
+                                  className="text-destructive"
+                                  disabled={user.is_admin}
+                                >
+                                  {user.is_admin ? "Cannot Delete Admin" : "Remove User"}
+                                </DropdownMenuItem>
+                              </DropdownMenuContent>
+                            </DropdownMenu>
+                          </TableCell>
+                        </TableRow>
+                      ))
+                    )}
+                  </TableBody>
+                </Table>
+              )}
             </CardContent>
           </Card>
         </div>
       </main>
     </div>
+    </AdminAuthGuard>
   );
 }

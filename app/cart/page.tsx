@@ -8,7 +8,9 @@ import { Button } from "@/components/ui/button"
 import { Card, CardContent } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { useCart } from "@/lib/hooks/use-cart"
+import { usePromo } from "@/lib/hooks/use-promo"
 import { useState } from "react"
+import toast from "react-hot-toast"
 
 export default function CartPage() {
   const {
@@ -21,6 +23,7 @@ export default function CartPage() {
     total,
   } = useCart()
   const [promoCode, setPromoCode] = useState("")
+  const { appliedPromo, applyPromo, validatePromo, removeAppliedPromo } = usePromo();
 
   if (cart.length === 0) {
     return (
@@ -43,11 +46,25 @@ export default function CartPage() {
     )
   }
 
+  const promoDiscount = appliedPromo ? (validatePromo(appliedPromo.code, subtotal).discount ?? 0) : 0;
+  const finalTotal = total - promoDiscount;
+
+  const handleApplyPromo = () => {
+    if (!promoCode) {
+      toast.error("Please enter a promo code.");
+      return;
+    }
+    const result = applyPromo(promoCode, subtotal);
+    if (result.valid) {
+      toast.success("Promo code applied!");
+    } else {
+      toast.error(result.message || "Invalid promo code.");
+    }
+  };
+
   return (
     <div className="min-h-screen flex flex-col">
-            import { useCart } from "@/lib/hooks/use-cart"
-            import { usePromo } from "@/lib/hooks/use-promo"
-
+       <Header />
       <main className="flex-1">
         <div className="container mx-auto px-4 py-12">
           <h1 className="text-3xl md:text-4xl font-serif font-bold mb-8">Shopping Cart</h1>
@@ -60,7 +77,6 @@ export default function CartPage() {
                   <CardContent className="p-4">
                     <div className="flex gap-4">
                       <div className="relative w-24 h-32 flex-shrink-0 rounded-md overflow-hidden bg-muted">
-              const { appliedPromo, applyPromo, validatePromo, removeAppliedPromo } = usePromo();
                         <Image
                           src={item.image || "/placeholder.svg"}
                           alt={item.name}
@@ -140,10 +156,16 @@ export default function CartPage() {
                       <span className="text-muted-foreground">Tax</span>
                       <span className="font-medium">${tax.toFixed(2)}</span>
                     </div>
+                    {appliedPromo && (
+                      <div className="flex justify-between text-sm text-green-600">
+                        <span className="text-muted-foreground">Promo Discount</span>
+                        <span className="font-medium">-${promoDiscount.toFixed(2)}</span>
+                      </div>
+                    )}
                     <div className="pt-4 border-t">
                       <div className="flex justify-between">
                         <span className="font-semibold">Total</span>
-                        <span className="text-xl font-bold">${total.toFixed(2)}</span>
+                        <span className="text-xl font-bold">${finalTotal.toFixed(2)}</span>
                       </div>
                     </div>
                   </div>
@@ -156,8 +178,14 @@ export default function CartPage() {
                         onChange={(e) => setPromoCode(e.target.value)}
                         className="flex-1"
                       />
-                      <Button variant="outline">Apply</Button>
+                      <Button variant="outline" onClick={handleApplyPromo}>Apply</Button>
                     </div>
+                    {appliedPromo && (
+                      <div className="flex items-center justify-between text-sm">
+                        <p>Applied: <span className="font-semibold">{appliedPromo.code}</span></p>
+                        <Button variant="link" size="sm" onClick={removeAppliedPromo} className="h-auto p-0 text-destructive">Remove</Button>
+                      </div>
+                    )}
                   </div>
 
                   <Button size="lg" className="w-full mb-3" asChild>

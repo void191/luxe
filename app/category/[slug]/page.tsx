@@ -57,6 +57,7 @@ export default function CategoryPage({ params }: CategoryPageProps) {
   const [sortOption, setSortOption] = useState("newest");
   const [categories, setCategories] = useState<string[]>([]);
   const [selectedCategory, setSelectedCategory] = useState<string>("all");
+  const [isNewArrivalsView, setIsNewArrivalsView] = useState(false);
 
   useEffect(() => {
     const storedProducts = localStorage.getItem("products");
@@ -69,22 +70,43 @@ export default function CategoryPage({ params }: CategoryPageProps) {
       ...new Set(products.map((p: Product) => p.category)),
     ];
     setCategories(uniqueCategories as string[]);
-    // If the route requested a specific category (e.g. "women" or "featured"),
-    // set that as the selected category. Otherwise default to "all" so
-    // the select shows "All Categories" visibly.
-    if (slug) {
+  }, []);
+
+  useEffect(() => {
+    // "new-arrivals" is a special view - it doesn't change category filter
+    if (slug === "new-arrivals") {
+      setIsNewArrivalsView(true);
+      setSelectedCategory("all");
+    } else if (slug && slug !== "sale") {
+      // For actual categories (women, men, accessories, featured), set as selected
+      setIsNewArrivalsView(false);
       setSelectedCategory(slug);
     } else {
+      // For "all" or "sale", keep category as "all"
+      setIsNewArrivalsView(false);
       setSelectedCategory("all");
     }
-  }, []);
+  }, [slug]);
 
   useEffect(() => {
     let productsToDisplay;
 
-    if (selectedCategory === "featured") {
+    // New Arrivals: show products from last 14 days, regardless of category
+    if (isNewArrivalsView || slug === "new-arrivals") {
+      const fourteenDaysAgo = new Date();
+      fourteenDaysAgo.setDate(fourteenDaysAgo.getDate() - 14);
+      
+      productsToDisplay = allProducts.filter((p) => {
+        const productDate = p.createdAt ? new Date(p.createdAt) : new Date();
+        return productDate >= fourteenDaysAgo;
+      });
+    } else if (slug === "sale") {
+      // Sale view: products with originalPrice (discounted items)
+      productsToDisplay = allProducts.filter((p) => p.originalPrice && p.originalPrice > p.price);
+    } else if (selectedCategory === "featured") {
       productsToDisplay = allProducts.filter((p) => p.isFeatured);
     } else {
+      // Standard category filtering
       productsToDisplay =
         selectedCategory === "all"
           ? allProducts
@@ -102,15 +124,17 @@ export default function CategoryPage({ params }: CategoryPageProps) {
         sortedProducts.sort((a, b) => b.price - a.price);
         break;
       case "newest":
-        // This assumes newer products are added later.
-        // A more robust solution would use a creation timestamp.
-        sortedProducts.reverse();
+        sortedProducts.sort((a, b) => {
+          const dateA = a.createdAt ? new Date(a.createdAt).getTime() : 0;
+          const dateB = b.createdAt ? new Date(b.createdAt).getTime() : 0;
+          return dateB - dateA;
+        });
         break;
       default:
         break;
     }
     setDisplayedProducts(sortedProducts);
-  }, [selectedCategory, sortOption, allProducts]);
+  }, [selectedCategory, sortOption, allProducts, slug, isNewArrivalsView]);
 
   if (!categoryInfo && slug !== 'all') {
     notFound();
@@ -122,9 +146,17 @@ export default function CategoryPage({ params }: CategoryPageProps) {
 
   const handleCategoryChange = (value: string) => {
     setSelectedCategory(value);
+    // When user manually changes category, exit New Arrivals view
+    setIsNewArrivalsView(false);
   };
   
-  const currentCategory = categoryData[selectedCategory] || { name: "All Products", description: "Browse all our collections." };
+  // Display title based on current view
+  const currentCategory = (() => {
+    if (isNewArrivalsView || slug === "new-arrivals") {
+      return { name: "New Arrivals", description: "Discover the latest additions to our collection from the last 14 days" };
+    }
+    return categoryData[selectedCategory] || { name: "All Products", description: "Browse all our collections." };
+  })();
 
   return (
     <div className="min-h-screen flex flex-col">

@@ -29,6 +29,9 @@ import { ReviewsProvider } from "@/lib/hooks/use-reviews";
 import { OrderHistoryProvider } from "@/lib/hooks/use-order-history";
 import { PromoProvider } from "@/lib/hooks/use-promo";
 
+import { AuthProvider } from "@/lib/hooks/use-auth";
+import { ThemeProvider } from "@/components/theme-provider";
+
 export default function RootLayout({
   children,
 }: Readonly<{
@@ -37,19 +40,28 @@ export default function RootLayout({
   return (
     <html lang="en" suppressHydrationWarning>
       <body className={`${inter.className} font-sans antialiased`}>
-        <ReviewsProvider>
-          <WishlistProvider>
-            <PromoProvider>
-              <CartProvider>
-                <OrderHistoryProvider>
-                  {children}
-                  <Toaster />
-                  <Analytics />
-                </OrderHistoryProvider>
-              </CartProvider>
-            </PromoProvider>
-          </WishlistProvider>
-        </ReviewsProvider>
+        <ThemeProvider
+          attribute="class"
+          defaultTheme="system"
+          enableSystem
+          disableTransitionOnChange
+        >
+          <AuthProvider>
+            <ReviewsProvider>
+              <WishlistProvider>
+                <PromoProvider>
+                  <CartProvider>
+                    <OrderHistoryProvider>
+                      {children}
+                      <Toaster />
+                      <Analytics />
+                    </OrderHistoryProvider>
+                  </CartProvider>
+                </PromoProvider>
+              </WishlistProvider>
+            </ReviewsProvider>
+          </AuthProvider>
+        </ThemeProvider>
       </body>
     </html>
   );
